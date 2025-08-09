@@ -1,0 +1,64 @@
+CSV_HEADERS = [
+    "Handle","Title","Body (HTML)","Vendor","Standard Product Type","Tags","Published",
+    "Option1 Name","Option1 Value","Variant SKU","Variant Grams","Variant Inventory Tracker",
+    "Variant Inventory Policy","Variant Fulfillment Service","Variant Price","Variant Compare At Price",
+    "Variant Requires Shipping","Variant Taxable","Variant Weight Unit","Image Src","Image Position",
+    "Image Alt Text","SEO Title","SEO Description","Google Product Category",
+     first_img = p.images[0] if p.images else ""
+    base_row = [
+        p.handle,
+        p.title,
+        p.body_html,
+        p.vendor,
+        "",  # Standard Product Type (leave blank if using Google category below)
+        ",".join(p.tags),
+        "TRUE" if p.published else "FALSE",
+        p.option1_name,
+        p.option1_value,
+        p.sku or "",
+        p.grams or "",
+        "shopify",
+        "deny",
+        "manual",
+        p.price or "",
+        p.compare_at_price or "",
+        "TRUE" if p.requires_shipping else "FALSE",
+        "TRUE" if p.taxable else "FALSE",
+        p.weight_unit,
+        first_img,
+        "1" if first_img else "",
+        p.title,
+        f"Buy {p.title} by {p.vendor} – dual motor e-bike, fast shipping.",
+        "Sporting Goods > Outdoor Recreation > Cycling > Electric Bicycles",
+    ]
+    rows.append(base_row)
+
+    # Additional image rows
+    for idx, img in enumerate(p.images[1:], start=2):
+        rows.append([
+            p.handle, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+            img, str(idx), "", "", "", "",
+        ])
+
+    return rows
+
+
+def main(urls: List[str]) -> None:
+    if not urls:
+        print("[INFO] No URLs provided in PRODUCT_URLS. Pass URLs as CLI args or edit the script.")
+        print("Usage: python philodo_to_shopify.py https://.../falcon https://.../forester")
+        return
+
+    products: List[ProductData] = []
+    for url in urls:
+        print(f"[INFO] Scraping: {url}")
+        p = parse_product(url)
+        if p:
+            products.append(p)
+            print(f"[OK] Parsed: {p.title} ({len(p.images)} images)")
+        else:
+            print(f"[FAIL] Could not parse: {url}")
+
+    if not products:
+        print("[ERROR] No products parsed. Exiting.")
+        return
